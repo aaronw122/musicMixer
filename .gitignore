@@ -1,0 +1,7 @@
+notes
+.env
+.env.*
+
+node_modules/
+
+notes/
