@@ -94,6 +94,8 @@ When working on features, consider both sides. Client changes often need corresp
 2. **Docs** (`docs/`): Persistent supporting documentation that should remain accurate over time, but is not at the same criticality as Blueprints (for example, user guides, runbooks, or stable component details).
 3. **Notes** (`notes/`): Temporary, work‑in‑progress material. By default, new decisions, discoveries, and conversation summaries land here first. Promote content upward to Docs or Blueprints once it is stable and broadly useful.
 
+**Reviews go in `notes/`.** When running subagent reviews (plan reviews, code reviews, etc.), always write output files to `notes/`, not `/tmp` or other locations. Use descriptive filenames like `notes/2026-02-23-mvp-plan-review-agent1.md`.
+
 ## Safety Rules
 
 **NEVER execute these commands without explicit user approval:**
