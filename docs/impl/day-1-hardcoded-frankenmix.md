@@ -6,6 +6,19 @@
 
 ---
 
+## Progress
+
+- [x] Step 1: Backend Project Scaffolding
+- [x] Step 2: Modal + BS-RoFormer Setup *(BS-Roformer-SW.ckpt, 6-stem)*
+- [x] Step 3: Upload Endpoint
+- [x] Step 4: Synchronous Pipeline + Mixer
+- [x] Step 5: Local Fallback (htdemucs_ft) *(only if Modal blocked)*
+- [x] Step 6: Static HTML Test Page
+- [x] Step 7: End-to-End Test
+- [x] Step 8: Install rubberband (Prep for Day 2) *(v4.0.0 already installed)*
+
+---
+
 ## What We Are Building
 
 A synchronous pipeline: upload 2 MP3/WAV files via a web form, separate each into 6 stems on Modal cloud GPU (BS-RoFormer SW), take the vocal stem from Song A and recombine the 5 instrumental stems (drums + bass + guitar + piano + other) from Song B, overlay them with pydub, export an MP3, and serve it back to a single HTML page with an `<audio>` tag.

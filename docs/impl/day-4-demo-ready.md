@@ -13,6 +13,28 @@
 
 ---
 
+## Progress
+
+- [ ] Step 1: Key Detection with Essentia
+- [ ] Step 2: Key Distance Algorithm + Confidence Gate
+- [ ] Step 3: Key/Pitch Shifting via Rubberband
+- [ ] Step 4: Vocal Stem Pre-Filtering
+- [ ] Step 5: Spectral Ducking
+- [ ] Step 6: Wire Ducking into Pipeline
+- [ ] Step 7: Processing Lock + Fail-Fast 429
+- [ ] Step 8: Upload Validation Hardening
+- [ ] Step 9: Pipeline Error Handling + User-Friendly Messages
+- [ ] Step 10: TTL Cleanup + Lock Watchdog
+- [ ] Step 11: Intermediate Artifact Cleanup
+- [ ] Step 12: Frontend Error States
+- [ ] Step 13: Warnings Display + used_fallback Indicator
+- [ ] Step 14: Expiration Notice + Expired Remix Handling
+- [ ] Step 15: UI Copy
+- [ ] Step 16: End-to-End Testing Matrix
+- [ ] Step 17: LLM Prompt Tuning
+
+---
+
 ## Dependencies to Install
 
 ### Python packages (backend)

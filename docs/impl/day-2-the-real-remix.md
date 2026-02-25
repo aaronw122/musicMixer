@@ -4,6 +4,19 @@
 **Source plan:** `docs/plans/2026-02-23-feat-mvp-prompt-based-remix-plan.md` (revision 22)
 **Builds on:** Day 1 output (FastAPI skeleton, Modal BS-RoFormer 6-stem separation, pydub overlay, hardcoded sync pipeline, single HTML page)
 
+## Progress
+
+- [ ] Step 1: Async Pipeline Orchestrator + SSE Progress Events
+- [ ] Step 2: BPM Detection + Reconciliation
+- [ ] Step 3: Sample Rate/Channel Standardization + Tempo Matching via Rubberband
+- [ ] Step 4: LUFS Normalization + Peak Limiter
+- [ ] Step 5: Deterministic Fallback Plan + Section Data Structures
+- [ ] Step 6: Section-Based Arrangement Renderer
+- [ ] Step 7: Wire the Full Pipeline
+- [ ] Step 8: Update the HTML Test Page with SSE Progress
+
+---
+
 ## Exit Criteria
 
 Upload two songs at different BPMs. Hear a tempo-matched, level-balanced, multi-section remix with per-stem volume control (6 stems). See real-time progress updates in the browser.
