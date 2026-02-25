@@ -96,6 +96,13 @@ When working on features, consider both sides. Client changes often need corresp
 
 **Reviews go in `notes/`.** When running subagent reviews (plan reviews, code reviews, etc.), always write output files to `notes/`, not `/tmp` or other locations. Use descriptive filenames like `notes/2026-02-23-mvp-plan-review-agent1.md`.
 
+**Session documentation is mandatory.** During any session that involves implementation, debugging, investigation, or design work:
+- Write findings, decisions, and changes to `notes/` as you go — don't wait until the end or until asked.
+- Use the format `notes/YYYY-MM-DD-<topic>.md` (e.g., `notes/2026-02-25-volume-dip-investigation.md`).
+- Include: what was investigated, what changed, key decisions and their rationale, and any open items for future sessions.
+- If subagents write scratch output to `/tmp`, the orchestrator must ensure the useful content gets captured in `notes/` before the session ends.
+- Trivial sessions (quick questions, single-line fixes) don't need notes.
+
 ## Safety Rules
 
 **NEVER execute these commands without explicit user approval:**

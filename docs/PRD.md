@@ -31,6 +31,15 @@ Every remix is ephemeral — replayable for up to 3 hours or until you create a 
 | AI stem selection from prompt | Voice cloning |
 | Progress indicators | Alternative suggestions on failure |
 
+### Fast Follows (Post-MVP)
+
+Ideas to pursue once the core pipeline is solid:
+
+- **Post-remix controls** — After the AI generates a remix, give users knobs to tweak it themselves: adjust individual stem volumes, mute/solo stems, shift timing, change tempo/key. Turns the one-shot generation into a starting point the user can iterate on without re-prompting.
+- **Iterative refinement via prompt** — "Make the drums louder," "bring in the vocals earlier." Conversational follow-ups that modify the existing mix rather than regenerating from scratch.
+- **Export/download** — Let users save their remix as an audio file (legal implications TBD).
+- **Sharing** — Shareable links so users can send remixes to friends (ephemeral, same TTL rules).
+
 ### Target User
 
 People who love music and often curate playlists. Anyone who's wondered "what would X sound like over Y" but has no DJ skills.
