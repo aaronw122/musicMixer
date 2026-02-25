@@ -6,14 +6,14 @@
 
 ## Progress
 
-- [ ] Step 1: Async Pipeline Orchestrator + SSE Progress Events
-- [ ] Step 2: BPM Detection + Reconciliation
-- [ ] Step 3: Sample Rate/Channel Standardization + Tempo Matching via Rubberband
-- [ ] Step 4: LUFS Normalization + Peak Limiter
-- [ ] Step 5: Deterministic Fallback Plan + Section Data Structures
-- [ ] Step 6: Section-Based Arrangement Renderer
-- [ ] Step 7: Wire the Full Pipeline
-- [ ] Step 8: Update the HTML Test Page with SSE Progress
+- [x] Step 1: Async Pipeline Orchestrator + SSE Progress Events (PR #7)
+- [x] Step 2: BPM Detection + Reconciliation (PR #4)
+- [x] Step 3: Sample Rate/Channel Standardization + Tempo Matching via Rubberband (PR #5)
+- [x] Step 4: LUFS Normalization + Peak Limiter (PR #5)
+- [x] Step 5: Deterministic Fallback Plan + Section Data Structures (PR #6)
+- [x] Step 6: Section-Based Arrangement Renderer (PR #6)
+- [x] Step 7: Wire the Full Pipeline (PR #8)
+- [x] Step 8: Update the HTML Test Page with SSE Progress (PR #7)
 
 ---
 
