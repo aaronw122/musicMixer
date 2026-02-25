@@ -4,6 +4,21 @@
 > Canonical source: `docs/plans/2026-02-23-feat-mvp-prompt-based-remix-plan.md`
 > Reference docs: `docs/impl/llm-integration.md`, `docs/impl/audio-pipeline.md`, `docs/impl/frontend.md`, `docs/impl/api-contract.md`
 
+## Progress
+
+- [ ] Step 1: Install Backend Dependency
+- [ ] Step 2: Build the Interpreter Service (B5)
+- [ ] Step 3: Wire LLM into Pipeline
+- [ ] Step 4: Test LLM with Real Songs
+- [ ] Step 5: Frontend Scaffolding (F1)
+- [ ] Step 6: Upload UI (F2)
+- [ ] Step 7: Prompt Input + Form Submission (F3)
+- [ ] Step 8: SSE Progress Hook + Display (F4)
+- [ ] Step 9: Audio Player (F5)
+- [ ] Step 10: End-to-End Integration Test
+
+---
+
 ## Assumptions (Day 1+2 Complete)
 
 By end of Day 2, the following is working:

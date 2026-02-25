@@ -5,3 +5,7 @@ notes
 node_modules/
 
 notes/
+
+# Child repos (independent git repos)
+backend/
+frontend/

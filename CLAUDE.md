@@ -140,6 +140,49 @@ Any time you:
 | Frontend-specific | `frontend/CLAUDE.md` → Lessons Learned section |
 | Backend-specific | `backend/CLAUDE.md` → Lessons Learned section |
 
+## Implementation Schedule
+
+4-day sprint. Demo: **Saturday 2026-03-01**.
+
+| Day | Milestone | Key Deliverable |
+|-----|-----------|----------------|
+| Day 1 | Hardcoded Frankenmix | E2E pipeline works: upload 2 songs → stems separated → hardcoded mix → playback |
+| Day 2 | The Real Remix | Prompt-driven stem selection, tempo/key matching, async processing + SSE progress |
+| Day 3 | Intelligence | LLM-powered mix decisions, energy profiling, smart volume/timing |
+| Day 4 | Demo Ready | Polish, error handling, test suite, deployment |
+
+Implementation plans: `docs/impl/day-{1,2,3,4}-*.md`
+
+## Subagent Implementation Workflow
+
+When deploying subagents for parallel implementation work, follow this standard pattern:
+
+1. **Worktree isolation** — every implementation agent gets its own worktree (`isolation: "worktree"`)
+2. **Implement + test** — agent implements the task, writes/runs tests, fixes failures
+3. **Commit + PR** — agent commits with conventional message, pushes to branch, creates PR via `gh pr create`
+4. **Agent review** — a separate review agent checks the PR for correctness, patterns, and test coverage
+5. **Orchestrator tracks status** — orchestrator monitors PR URLs and review results, reports to user
+
+**Orchestrator discipline:** The orchestrator's ONLY job is to spawn agents, monitor status, and report results. Never read implementation files or agent output directly in the orchestrator. Use consolidation subagents for result gathering. Even small tasks should be delegated if multi-agent coordination follows.
+
+## Test Data
+
+Example songs for testing are in `examples/`:
+
+| File | Role |
+|------|------|
+| `The Notorious B.I.G. - Hypnotize (Official Audio).mp3` | Song A (vocals source) |
+| `Althea (2013 Remaster).mp3` | Song B (instrumentals source) |
+
+## AGENTS.md Symlinks
+
+`AGENTS.md` files in `frontend/` and `backend/` are symlinks to their respective `CLAUDE.md`. Edit `CLAUDE.md` only — both files point to the same content.
+
 ## Lessons Learned
 
-_(Add entries here as the project evolves)_
+- **Kill background agents before dev servers.** "Clear" agents can outlive tasks and trigger `--reload` loops.
+  - **Symptoms:** "changes detected" messages, server restarting endlessly, pages stop loading, port conflicts
+  - **Diagnose:** `pgrep -lf 'claude -p|codex exec|gemini -m'`
+  - **Kill:** `pkill -f 'claude -p'; pkill -f 'codex exec'; pkill -f 'gemini -m'`
+  - **Verify ports free:** `lsof -i :8000` and `lsof -i :5173`
+  - **Root cause:** Background agents edit files in the project dir, triggering uvicorn's `--reload` file watcher into restart loops. Each restart drops active connections.
