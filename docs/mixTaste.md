@@ -435,7 +435,7 @@ The Camelot Wheel maps 24 musical keys to an alphanumeric code. Inner ring (A) =
 1. If same key or adjacent on Camelot Wheel: proceed without pitch shift
 2. If 2-3 steps apart: pitch-shift the vocal stem (fewer artifacts than shifting instrumentals)
 3. If >3 steps apart: shift to nearest compatible key (max +/-3 semitones preferred)
-4. Never pitch-shift more than +/-5 semitones -- quality degrades too much
+4. Never pitch-shift more than +/-4 semitones -- quality degrades too much in MVP-quality targets
 5. Clashing is most audible in vocals + melody; bass/drums-only combinations are more forgiving
 
 ### 3.2 Spectral Awareness  <!-- Future/Post-Sprint: Bark/ERB band analysis, psychoacoustic masking. MVP uses basic spectral complementarity scoring only. -->

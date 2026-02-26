@@ -6,6 +6,7 @@
 
 ## Progress
 
+- [ ] Step 0: Admin Stem Debug Endpoints
 - [ ] Step 1: Install Backend Dependency
 - [ ] Step 2: Build the Interpreter Service (B5)
 - [ ] Step 3: Wire LLM into Pipeline
@@ -28,13 +29,45 @@ By end of Day 2, the following is working:
 - BPM detection + `reconcile_bpm()` with expanded interpretation matrix
 - Rubberband tempo matching (single-pass CLI wrapper, tiered limits, instrumental-source-tempo default)
 - Sample rate + channel standardization (44.1kHz stereo float32)
-- Cross-song level matching with `pyloudnorm` (fixed +3 dB vocal offset, silence guard)
-- LUFS normalization on final mix + soft-knee peak limiter
+- Cross-song level matching with `pyloudnorm` (fixed +2 dB vocal offset, silence guard)
+- LUFS normalization on final mix + soft-knee peak limiter (target: -12 LUFS)
 - Fade-in/fade-out + MP3 export via ffmpeg
-- **Deterministic fallback plan** (`generate_fallback_plan()`) producing a 5-section arrangement
+- **Deterministic fallback plan** (`generate_fallback_plan()`) producing a 5- or 6-section arrangement (beat-count dependent)
 - **Section-based arrangement renderer** (QR-1 mixer logic): beat-to-sample conversion via beat grid, per-stem gains, transition envelopes (fade, crossfade, cut with micro-crossfade)
 - ThreadPoolExecutor + Queue for async processing, SSE streaming
 - Basic HTML page for testing (upload, progress, audio playback)
+
+---
+
+## Plan A + Plan B Reconciliation (Applied to Day 3)
+
+This section aligns the tactical fixes (Plan A) and the mixing-intelligence spec (Plan B) with Day 3 scope.
+
+**Canonical Day 3 baseline (must hold):**
+- Plan A runtime compromises are authoritative: `TARGET_LUFS = -12`, vocal offset `+2 dB`, no mix bus compressor, and signal order `limit -> normalize -> transparent trim`.
+- Soft-clipper math fix is required before any knee-width tuning.
+- Arrangement safeguards stay active (section guards, transition caps, no zero-beat sections).
+
+**Plan B rules imported into Day 3 now:**
+- Keep MVP stem constraint: vocals from one song, all instrumentals from the other.
+- Treat stems with integrated LUFS `< -50` as inactive; exclude from normalization math, stem counting, and LLM stem-selection context.
+- Inject simplified energy-curve logic into the LLM prompt; avoid flat 0.5-0.8 stem levels across all sections.
+- Use kick-pattern-aware guidance so plans avoid heavy pumping for non-4/4 material.
+- Use `MAX_PITCH_SHIFT_SEMITONES = 4` as the Day 3 cap (quality-first default).
+
+**Plan B rules deferred beyond Day 3:**
+- Per-beat phase correction, full psychoacoustic masking, moments engineering, emotional arc modeling, and per-stem cross-song mixing.
+- Full genre-rule runtime engine and creativity-dial expansion beyond prompt heuristics.
+
+**Day 3.5 Audio-Quality A/B Track (non-default):**
+- Keep canonical defaults unchanged (`TARGET_LUFS = -12`, vocal offset `+2 dB`, no mix bus compressor, current output-stage order).
+- Run controlled A/B experiments only for:
+  - auto-level smoothing: `window_sec=4.0`, `max_boost_db=1.0`, `max_cut_db=2.0`
+  - vocal compressor makeup trim: `4.0 -> 3.0` (optional `2.5`)
+  - MP3 export-path check: remove forced `aresample=osf=s16:dither_method=triangular`
+- Defer any default change to vocal offset or LUFS target until objective metrics and listening signoff.
+
+If older text in this file conflicts with this reconciliation section, this section wins.
 
 ---
 
@@ -56,6 +89,9 @@ Specifically:
 Day 3 is split into two parallel tracks after a brief sequential setup:
 
 ```
+Quick win (before main work):
+  Step 0: Admin stem debug endpoints (list + serve individual stems per session)
+
 Morning (sequential):
   Step 1: Install backend dependency (anthropic SDK)
   Step 2: Build interpreter service (B5)
@@ -72,6 +108,38 @@ Evening (sequential, needs backend + frontend):
   Step 9: Audio player (F5)
   Step 10: End-to-end integration test
 ```
+
+---
+
+## Step 0: Admin Stem Debug Endpoints
+
+**Time estimate:** 20-30 minutes
+
+Add debug/admin endpoints so we can listen to individual stems per session. This is critical for debugging — when a mix sounds wrong, we need to know whether it's a stem separation issue or a pipeline issue.
+
+### Endpoints
+
+- `GET /api/remix/{session_id}/stems` — returns JSON list of available stems for both songs
+  ```json
+  {
+    "song_a": ["vocals", "drums", "bass", "guitar", "piano", "other"],
+    "song_b": ["vocals", "drums", "bass", "guitar", "piano", "other"]
+  }
+  ```
+- `GET /api/remix/{session_id}/stems/{song}/{stem_name}` — serves the raw WAV file
+  - `song` = `song_a` or `song_b`
+  - `stem_name` = `vocals`, `drums`, `bass`, `guitar`, `piano`, `other`
+  - Returns 404 if stem doesn't exist (e.g., `guitar` on 4-stem local fallback)
+
+### Implementation
+
+Add routes to `api/remix.py`. Stems are already on disk at `data/stems/{session_id}/song_a/` and `data/stems/{session_id}/song_b/` from the separation step.
+
+Optionally add a simple stem player section to the existing `static/index.html` test page — list stems as `<audio>` elements after a remix completes. No React needed, this is admin/debug only.
+
+**Files modified:**
+- `backend/src/musicmixer/api/remix.py` (new routes)
+- `backend/static/index.html` (optional: stem player section)
 
 ---
 
@@ -150,7 +218,8 @@ CAPABILITIES:
 MIXING PRINCIPLES:
 - Contrast creates energy: if a section has drums at 0.0, the next section's drums at 1.0 will feel powerful
 - When vocals are active, reduce competing stems (guitar, piano, other) to 0.3-0.5 unless the user asks for a "full" sound
-- Every remix should have an energy arc: build, peak, resolve
+- Every remix should have an energy arc: intro/low -> verse-mid -> breakdown dip -> drop/peak -> outro resolve
+- If a prompt implies pumping/ducking, treat non-4/4 or syncopated grooves conservatively (sub-bass-only, gentle depth) and avoid obvious whole-mix pumping
 - Muted stems (0.0) are a tool, not a failure -- silence in the right place is more powerful than sound
 - Use the full 0.0-1.0 range. Avoid keeping all stems at 0.5-0.8 throughout -- that produces a flat, unengaging mix
 ```
@@ -205,6 +274,9 @@ TEMPO MATCHING:
 
 KEY MATCHING:
 {key_matching_detail}
+
+PITCH LIMIT:
+- Do not plan shifts above +/-4 semitones. If compatibility would require more, keep original key and add a warning.
 ```
 
 **Section 8: Ambiguity Handling**
@@ -2083,8 +2155,8 @@ No additional frontend runtime dependencies. The app uses:
 **Risk:** The deterministic fallback produces a "correct but boring" remix with no prompt awareness.
 
 **Mitigations:**
-- Fallback uses energy profiles to select the best source regions
-- 5-section arrangement with dynamics (drums at 0.0 in breakdown, full in drop)
+- Fallback uses a deterministic 25%-offset source selection with bounded section dynamics
+- 5- or 6-section arrangement (beat-count dependent) with breakdown drums at 0.1 and optional drop section
 - `used_fallback = True` + honest explanation tells the user what happened
 - Amber styling in the player distinguishes fallback from LLM-driven output
 
