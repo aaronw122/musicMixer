@@ -9,3 +9,7 @@ notes/
 # Child repos (independent git repos)
 backend/
 frontend/
+examples
+
+# A/B test suite output
+mashupTests/
