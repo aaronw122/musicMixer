@@ -1,12 +1,25 @@
-"""A/B test suite for sound quality enhancement flags.
+"""A/B test suite for the musicMixer remix pipeline.
 
 Downloads YouTube audio pairs, runs the remix pipeline with different AB flag
 configurations, measures LUFS and true-peak on outputs, and saves labeled
 results to mashupTests/.
 
+After the flag cleanup (2026-02-28), the following flags were merged into the
+baseline pipeline and no longer exist as toggleable flags:
+  - ab_control_day3        (always on)
+  - ab_autolvl_tune_v1     (tuned auto-leveler: 4s window, 1.5dB boost, 2.5dB cut)
+  - ab_vocal_makeup_v1     (3.0dB vocal makeup gain)
+  - ab_mp3_export_path_v1  (no pre-dither MP3 export)
+  - ab_per_stem_eq_v1      (corrective EQ per stem, always on)
+  - ab_resonance_detection_v1  (removed entirely — redundant with corrective EQ)
+  - ab_multiband_comp_v1       (removed entirely — caused gain-staging cascade)
+  - ab_static_mastering_v1     (static mastering is now the only mastering path)
+
+The only remaining flag is ab_taste_model_v1 (LLM-powered mix plan selection).
+
 Usage (from workspace root or backend dir):
   cd backend && uv run python ../scripts/run_ab_test_suite.py
-  cd backend && uv run python ../scripts/run_ab_test_suite.py --mode sweep
+  cd backend && uv run python ../scripts/run_ab_test_suite.py --mode compare
   cd backend && uv run python ../scripts/run_ab_test_suite.py --pairs 1,3
 """
 
@@ -42,24 +55,17 @@ log = logging.getLogger("ab-test-suite")
 
 def preflight() -> None:
     """Assert prerequisites exist before starting the suite."""
-    # Check AB flags exist on settings
     from musicmixer.config import settings
 
+    # After flag cleanup, only ab_taste_model_v1 remains as a toggleable flag
     required_flags = [
-        "ab_control_day3",
-        "ab_autolvl_tune_v1",
-        "ab_vocal_makeup_v1",
-        "ab_mp3_export_path_v1",
-        "ab_per_stem_eq_v1",
-        "ab_resonance_detection_v1",
-        "ab_multiband_comp_v1",
-        "ab_static_mastering_v1",
+        "ab_taste_model_v1",
     ]
     missing = [f for f in required_flags if not hasattr(settings, f)]
     if missing:
         log.error(
             "Missing AB flags on settings: %s. "
-            "Implement sound-quality-enhancement-plan prerequisites first.",
+            "Check backend/src/musicmixer/config.py.",
             ", ".join(missing),
         )
         sys.exit(1)
@@ -74,21 +80,22 @@ def preflight() -> None:
         )
         sys.exit(1)
 
-    log.info("Preflight OK — all flags present, yt_dlp available")
+    log.info("Preflight OK — ab_taste_model_v1 flag present, yt_dlp available")
 
 
 def parse_args() -> argparse.Namespace:
     """Parse CLI arguments."""
     parser = argparse.ArgumentParser(
-        description="A/B test suite for sound quality enhancement flags.",
+        description="A/B test suite for the musicMixer remix pipeline.",
     )
     parser.add_argument(
         "--mode",
-        choices=["compare", "sweep"],
+        choices=["compare", "baseline"],
         default="compare",
         help=(
-            "compare: all-off vs all-on (2 runs/pair). "
-            "sweep: per-flag isolation (5 runs/pair). Default: compare."
+            "compare: taste_model OFF vs ON (2 runs/pair). "
+            "baseline: single run with default settings (1 run/pair). "
+            "Default: compare."
         ),
     )
     parser.add_argument(
@@ -108,26 +115,31 @@ TEST_PAIRS = [
         "name": "1-biggie-althea",
         "url_a": "https://www.youtube.com/watch?v=eaPzCHEQExs",
         "url_b": "https://www.youtube.com/watch?v=ZZNZgtj26Fk",
+        "prompt": "Biggie rapping over Grateful Dead guitar. Vocals from Song A, instrumentals from Song B.",
     },
     {
         "name": "2-ghosttown-khala",
         "url_a": "https://www.youtube.com/watch?v=qAsHVwl-MU4",
         "url_b": "https://www.youtube.com/watch?v=2QxeDecgNWg",
+        "prompt": "Ghost Town vocals over Zamrock groove. Vocals from Song A, instrumentals from Song B.",
     },
     {
         "name": "3-encore-numb",
         "url_a": "https://www.youtube.com/watch?v=7VksyVUAwi8",
         "url_b": "https://www.youtube.com/watch?v=kXYiU_JCYtU",
+        "prompt": "Jay-Z rapping over Linkin Park instrumentals. Vocals from Song A, instrumentals from Song B.",
     },
     {
         "name": "4-coldplay-daftpunk",
         "url_a": "https://www.youtube.com/watch?v=QtXby3twMmI",
         "url_b": "https://www.youtube.com/watch?v=IluRBvnYMoY",
+        "prompt": "Coldplay vocals over Daft Punk funk. Vocals from Song A, instrumentals from Song B.",
     },
     {
         "name": "5-doom-scarletbegonias",
         "url_a": "https://www.youtube.com/watch?v=X-YaI5ZkRvw",
         "url_b": "https://www.youtube.com/watch?v=xt4XAz2WZ3Y",
+        "prompt": "MF DOOM rapping over Grateful Dead jam. Vocals from Song A, instrumentals from Song B.",
     },
 ]
 
@@ -136,85 +148,31 @@ TEST_PAIRS = [
 # Flag matrices
 # ---------------------------------------------------------------------------
 
-# Baseline flags held at production defaults for ALL runs
-_BASELINE_FLAGS = {
-    "AB_CONTROL_DAY3": "True",
-    "AB_AUTOLVL_TUNE_V1": "True",
-    "AB_VOCAL_MAKEUP_V1": "True",
-    "AB_MP3_EXPORT_PATH_V1": "True",
-}
-
-# New sound-quality flags — the ones under test
-_NEW_FLAGS_OFF = {
-    "AB_PER_STEM_EQ_V1": "False",
-    "AB_RESONANCE_DETECTION_V1": "False",
-    "AB_MULTIBAND_COMP_V1": "False",
-    "AB_STATIC_MASTERING_V1": "False",
-}
-
-_NEW_FLAGS_ON = {
-    "AB_PER_STEM_EQ_V1": "True",
-    "AB_RESONANCE_DETECTION_V1": "True",
-    "AB_MULTIBAND_COMP_V1": "True",
-    "AB_STATIC_MASTERING_V1": "True",
-}
-
+# After flag cleanup, the baseline pipeline behavior is hardcoded — no flags
+# needed for the merged behaviors. The only toggleable flag is taste_model.
 
 def _build_compare_variants() -> list[dict]:
-    """Return variant configs for compare mode (control vs enhanced)."""
+    """Return variant configs for compare mode (taste_model OFF vs ON)."""
     return [
         {
-            "name": "control",
-            "flags": {**_BASELINE_FLAGS, **_NEW_FLAGS_OFF},
+            "name": "taste-off",
+            "flags": {"AB_TASTE_MODEL_V1": "False"},
         },
         {
-            "name": "enhanced",
-            "flags": {**_BASELINE_FLAGS, **_NEW_FLAGS_ON},
+            "name": "taste-on",
+            "flags": {"AB_TASTE_MODEL_V1": "True"},
         },
     ]
 
 
-def _build_sweep_variants() -> list[dict]:
-    """Return variant configs for sweep mode (control + 4 per-flag)."""
-    control = {
-        "name": "control",
-        "flags": {**_BASELINE_FLAGS, **_NEW_FLAGS_OFF},
-    }
-    sweep_eq = {
-        "name": "sweep-per-stem-eq",
-        "flags": {
-            **_BASELINE_FLAGS,
-            **_NEW_FLAGS_OFF,
-            "AB_PER_STEM_EQ_V1": "True",
+def _build_baseline_variants() -> list[dict]:
+    """Return variant config for baseline mode (single run, default settings)."""
+    return [
+        {
+            "name": "baseline",
+            "flags": {"AB_TASTE_MODEL_V1": "True"},
         },
-    }
-    # Resonance detection requires per-stem EQ (dependency)
-    sweep_resonance = {
-        "name": "sweep-resonance-detection",
-        "flags": {
-            **_BASELINE_FLAGS,
-            **_NEW_FLAGS_OFF,
-            "AB_PER_STEM_EQ_V1": "True",
-            "AB_RESONANCE_DETECTION_V1": "True",
-        },
-    }
-    sweep_multiband = {
-        "name": "sweep-multiband-comp",
-        "flags": {
-            **_BASELINE_FLAGS,
-            **_NEW_FLAGS_OFF,
-            "AB_MULTIBAND_COMP_V1": "True",
-        },
-    }
-    sweep_mastering = {
-        "name": "sweep-static-mastering",
-        "flags": {
-            **_BASELINE_FLAGS,
-            **_NEW_FLAGS_OFF,
-            "AB_STATIC_MASTERING_V1": "True",
-        },
-    }
-    return [control, sweep_eq, sweep_resonance, sweep_multiband, sweep_mastering]
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -261,6 +219,7 @@ def run_pipeline_variant(
     source_quality_b: str,
     flag_env_vars: dict[str, str],
     output_dir: Path,
+    prompt: str = "",
 ) -> dict:
     """Run one pipeline variant as a subprocess. Returns a result dict."""
     phase_name = f"{pair_name}-{variant_name}"
@@ -278,6 +237,8 @@ def run_pipeline_variant(
         phase_name, str(wav_a), str(wav_b),
         "--source-quality-a", source_quality_a,
         "--source-quality-b", source_quality_b,
+        "--prompt", prompt,
+        "--force-vocal-source", "song_a",
     ]
 
     log.info("Running %s/%s ...", pair_name, variant_name)
@@ -463,7 +424,7 @@ def main() -> int:
     if args.mode == "compare":
         variants = _build_compare_variants()
     else:
-        variants = _build_sweep_variants()
+        variants = _build_baseline_variants()
 
     total_runs = len(pairs) * len(variants)
     log.info(
@@ -484,9 +445,6 @@ def main() -> int:
     results_file = mashup_dir / "results.txt"
     with open(results_file, "w") as f:
         f.write(RESULTS_HEADER + "\n")
-
-    # Empty prompt enforcement — hardcoded in run_pipeline_phase.py (prompt="")
-    # and cannot be overridden from this script.
 
     completed = 0
     failed = 0
@@ -524,6 +482,7 @@ def main() -> int:
                 source_quality_b=quality_b,
                 flag_env_vars=variant["flags"],
                 output_dir=pair_output_dir,
+                prompt=pair.get("prompt", ""),
             )
 
             # Measure LUFS/peak if successful
