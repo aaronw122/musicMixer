@@ -11,5 +11,8 @@ backend/
 frontend/
 examples
 
+# Claude Code worktrees
+.claude/worktrees/
+
 # A/B test suite output
 mashupTests/

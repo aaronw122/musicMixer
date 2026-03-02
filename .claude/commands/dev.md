@@ -93,7 +93,19 @@ Frontend: ✓ http://localhost:5173
 Tip: Run `/dev --stop` to shut down cleanly
 ```
 
-If any server failed to start, report the error and suggest next steps.
+If a server failed, use ✗ instead of ✓ and include the error:
+```
+Backend:  ✗ FAILED — ModuleNotFoundError: No module named 'musicmixer'
+          → Try: cd backend && uv sync
+```
+
+If any server failed to start:
+- **Show the actual error output** — do not silently swallow failures
+- Check common causes: missing dependencies (`uv sync` / `bun install`), port still occupied, missing env vars
+- Suggest a specific fix based on the error
+- If health check times out, report "Backend failed to respond within 10s" with the last few lines of server output
+
+**Never report success if a server didn't start.** A missing health check response is a failure, not a silent skip.
 
 ---
 

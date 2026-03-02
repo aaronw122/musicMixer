@@ -81,6 +81,19 @@ ffprobe -v quiet -show_format /tmp/test-remix.mp3 2>&1 | grep -E "duration|forma
 
 ## Step 3: Report Results
 
+**CRITICAL: Always include the absolute file path of the output remix.** The user needs to be able to find and play the file without asking follow-up questions.
+
+After the remix completes, locate the output file:
+```bash
+# Find the most recent remix output
+find /Users/aaron/Projects/musicMixer/backend -name "*.mp3" -o -name "*.wav" | xargs ls -t 2>/dev/null | head -5
+```
+
+Open the remix for playback:
+```bash
+open "[absolute path to output file]"
+```
+
 ```
 TEST REMIX RESULTS
 ══════════════════
@@ -91,7 +104,7 @@ Session ID: [id]
 Status: [SUCCESS | FAILED]
 
 Duration: [processing time]
-Output: [file path or "playing in browser"]
+Output: /absolute/path/to/remix-output.mp3    ← ALWAYS include this
 Audio: [duration]s, [bitrate] kbps, [format]
 
 [If failed: error details and suggested fix]
