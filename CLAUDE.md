@@ -105,6 +105,8 @@ When working on features, consider both sides. Client changes often need corresp
 
 ## Safety Rules
 
+**NEVER push directly to main.** All agent work must go through feature/integration branches and PRs. The only path to main is: agent branch → integration branch PR → user validates → user merges. If you find yourself about to `git push origin main`, STOP — you are doing it wrong.
+
 **NEVER execute these commands without explicit user approval:**
 
 ```bash
@@ -113,6 +115,9 @@ rm -rf, rm -f, find . -delete
 
 # Git destructive operations
 git push --force, git reset --hard
+
+# Direct pushes to main
+git push origin main, git push origin HEAD:main
 
 # Database destructive commands
 DROP TABLE, DELETE FROM (without WHERE), TRUNCATE, migration resets
@@ -125,6 +130,23 @@ DROP TABLE, DELETE FROM (without WHERE), TRUNCATE, migration resets
 **Unit test fixes:** When asked to fix failing unit tests, first understand why they failed. Treat failures as strong signals of incorrect logic, not just brittle tests. If you conclude the root cause is production/business logic rather than the test itself, stop and bring it to the operator's attention before changing tests.
 
 **Test runs:** Whenever you run tests, always report the number of failing tests in your final output.
+
+### Test Commands
+
+**Backend** (`cd backend`):
+```bash
+# Quick check — fast tests only (~10 seconds)
+uv run pytest tests/ -m "not slow" -v
+
+# Full suite (~1-2 minutes)
+uv run pytest tests/ -v
+```
+
+**Frontend**: No test suite configured yet — `frontend/package.json` has no `test` script.
+
+**Sandbox note:** All backend test commands require `dangerouslyDisableSandbox: true` when run via Bash tool (uv cache writes are blocked by Claude Code's sandbox).
+
+**Subagent guidance:** When implementing backend changes, run quick tests first (`-m "not slow"`). Only run the full suite before committing.
 
 ## Self-Improvement
 
@@ -170,7 +192,12 @@ When deploying subagents for parallel implementation work, follow this standard 
 4. **Agent review** — a separate review agent checks the PR for correctness, patterns, and test coverage
 5. **Orchestrator tracks status** — orchestrator monitors PR URLs and review results, reports to user
 
-**Orchestrator discipline:** The orchestrator's ONLY job is to spawn agents, monitor status, and report results. Never read implementation files or agent output directly in the orchestrator. Use consolidation subagents for result gathering. Even small tasks should be delegated if multi-agent coordination follows.
+**Orchestrator discipline:** The orchestrator's ONLY job is to spawn agents, monitor status, and report results.
+
+- **NEVER** read implementation files, plan files, or verbose agent output in the orchestrator context
+- **NEVER** write code, edit files, or do "quick scaffolding" in the orchestrator — scaffolding IS implementation work and consumes context that the orchestrator needs to survive the full workflow
+- **ALWAYS** use consolidation subagents to read and summarize agent output — even if it "seems quick"
+- **WHY this matters:** The orchestrator's context window is the bottleneck for the entire workflow. Every line read or written in the orchestrator is context that can't be used for coordination. When the orchestrator runs out of context mid-workflow, the entire multi-agent session is lost. Delegate ruthlessly to protect this budget.
 
 ## Test Data
 
@@ -184,6 +211,24 @@ Example songs for testing are in `examples/`:
 ## AGENTS.md Symlinks
 
 `AGENTS.md` files in `frontend/` and `backend/` are symlinks to their respective `CLAUDE.md`. Edit `CLAUDE.md` only — both files point to the same content.
+
+## `gh` CLI and Claude Code Sandbox
+
+**`gh` commands MUST use `dangerouslyDisableSandbox: true`.** Claude Code's network sandbox runs a MITM proxy that Go binaries (`gh`) can't verify TLS through. This causes `x509: OSStatus -26276` errors on every `gh` call.
+
+**Every Bash call that runs `gh` must include `dangerouslyDisableSandbox: true`.** This applies to the main session AND all subagents. There is no workaround — no env var, no cert export, no retry logic fixes this. The proxy itself is the problem.
+
+```python
+# CORRECT — always do this for gh commands
+Bash(command="gh pr list ...", dangerouslyDisableSandbox=True)
+Bash(command="gh pr create ...", dangerouslyDisableSandbox=True)
+Bash(command="gh issue list ...", dangerouslyDisableSandbox=True)
+
+# WRONG — will always fail with x509 error
+Bash(command="gh pr list ...")
+```
+
+**Subagent prompts must include this instruction** when the agent will need to run `gh` commands (e.g., creating PRs, listing issues).
 
 ## Lessons Learned
 
