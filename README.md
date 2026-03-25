@@ -1,6 +1,6 @@
 # musicMixer
 
-A web app that lets anyone create a music remix by prompting AI. Upload two songs, describe the mashup you want, and the AI splits songs into stems, combines them, auto-matches tempo and key, and plays it back. Anyone can be a DJ.
+A web app that lets anyone create a music remix by prompting AI. Upload two songs, and the AI splits songs into stems, combines them, auto-matches tempo and key, and plays it back. Anyone can be a DJ.
 
 ## Try it
 
