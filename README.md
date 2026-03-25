@@ -9,10 +9,9 @@ A web app that lets anyone create a music mashup. Upload two songs, and the AI s
 ## How it works
 
 1. Upload two songs (MP3/WAV)
-2. Type a prompt describing the mashup (e.g., "Hendrix guitar with MF Doom rapping over it")
-3. AI separates stems (vocals, drums, bass, etc.), selects the right ones, matches tempo and key
-4. Transparent progress updates as it works
-5. Remix plays back
+2. AI separates stems (vocals, drums, bass, etc.), selects the right ones, matches tempo and key
+3. Transparent progress updates as it works
+4. Remix plays back
 
 Every remix is ephemeral — replayable for up to 3 hours, then gone forever.
 
