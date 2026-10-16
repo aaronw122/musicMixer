@@ -17,7 +17,7 @@ A web app that lets anyone create a music mashup. Upload two songs, and the AI s
 
 Every remix is ephemeral — replayable for up to 3 hours, then gone forever.
 
-## What's under the hood
+## how it works
 
 - **Stem splitting** — GPU-accelerated audio separation via Modal (A10G)
 - **Key matching** — detects keys of both tracks and shifts instrumentals to align
