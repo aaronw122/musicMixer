@@ -15,9 +15,9 @@ A web app that lets anyone create a music mashup. Upload two songs, and the AI s
 5. Transparent progress updates as it works
 6. Remix plays back
 
-Every remix is ephemeral — replayable for up to 3 hours, then gone forever.
+Every remix is ephemeral — replayable for up to 3 hours, then gone. 
 
-## how it works
+## tech used
 
 - **Stem splitting** — GPU-accelerated audio separation via Modal (A10G)
 - **Key matching** — detects keys of both tracks and shifts instrumentals to align
